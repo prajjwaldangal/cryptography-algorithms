@@ -11,7 +11,7 @@ Contains implementation of some common algorithms that are used in cryptography.
   according to a 2x2 matrix [[9, 4], 
                              [5, 7]].
                              
-  <img src="./hill_cipher/encrypt.png" width="700" height="750">
+  <img src="./hill_cipher/encrypt.png" width="700" height="850">
 
   Following is the decryption program for Hill Cipher. This python program takes ciphertext argument and decrypts the plaintext
   based on the inverse of the above mentioned matrix [[9, 4], 
@@ -28,8 +28,8 @@ Contains implementation of some common algorithms that are used in cryptography.
 
     Following is the encryption program for one-time pad. This python program encrypts the plaintext: "sendmoremoney" using 
     the key, [9 0 1 7 23 15 21 14 11 11 2 8 9].
-    <img src="./vigenere_cipher/encrypt.png" width="700" height="750">
+    <img src="./vigenere_cipher/encrypt.png" width="700" height="850">
     
     Following is the decryption program for the ciphertext from above but the objective here is to calculate the key that 
     yields the plaintext, "cashnotneeded".
-    <img src="./vigenere_cipher/decrypt.png" width="700" height="750">
+    <img src="./vigenere_cipher/decrypt.png" width="700" height="850">
