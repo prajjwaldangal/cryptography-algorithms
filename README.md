@@ -10,11 +10,13 @@ Contains implementation of some common algorithms that are used in cryptography.
   Following is the encryption program for Hill Cipher. This python program takes plaintext argument and encrypts the plaintext
   according to a 2x2 matrix [[9, 4], 
                              [5, 7]].
-  <img src="./hill_cipher/encrypt.png" width="400" height="790">
+                             
+  <img src="./hill_cipher/encrypt.png" width="500" height="600">
   # ![image][scale=0.5](./hill_cipher/encrypt.png)
 
   Following is the decryption program for Hill Cipher. This python program takes ciphertext argument and decrypts the plaintext
   based on the inverse of the above mentioned matrix [[9, 4], 
                                                       [5, 7]].
                                                     
-  ![image](./hill_cipher/decrypt.png)
+  <img src="./hill_cipher/decrypt.png" width="600" height="600">
+  # ![image](./hill_cipher/decrypt.png)
