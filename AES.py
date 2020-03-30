@@ -3,15 +3,15 @@
 
 # In[128]:
 
-
-key_length = len('0f1571c947d9e8591cb7add6af7f6798') // 2 # 16 bytes
+KEY = '0f1571c947d9e8591cb7add6af7f6798'
+KEY_LENGTH = len('0f1571c947d9e8591cb7add6af7f6798') // 2 # 16 bytes
 
 
 # In[132]:
 
 
 # since key length is 16 bytes, number of rounds is 14
-nor = 10
+NOR = 10
 class AES:
     
     def __init__(self, l, r):
@@ -64,10 +64,6 @@ class AES:
         mat[3] = tmp
         return mat
     
-    def _readAsHex(self, n):
-        # the following yield the decimal representation of n. n is hex
-        return int(n, base=16)
-
     @staticmethod
     def gmul(a, b):
         p = 0
@@ -75,45 +71,65 @@ class AES:
             if b & 1:
                 p ^= a
             a <<= 1
+            # checking if a has overflowed power of 7
             if a & 0x100:
                 a ^= 0x11b
             b >>= 1
         return p
     
     def _multiplyAndXor(self, multiplier, inp_mat):
-        m = int('0x11B', base=16)
-        return (multiplier[0] * self._readAsHex(str(inp_mat[0])) % m) ^ \
-                (multiplier[1] * self._readAsHex(str(inp_mat[1])) % m) ^ \
-                (multiplier[2] * self._readAsHex(str(inp_mat[2])) % m) ^ \
-                (multiplier[3] * self._readAsHex(str(inp_mat[3])) % m)
-
+        # m = int('0x11B', base=16)
+        return AES.gmul(multiplier[0], inp_mat[0]) ^ \
+                AES.gmul(multiplier[1], inp_mat[1]) ^ \
+                AES.gmul(multiplier[2], inp_mat[2]) ^ \
+                AES.gmul(multiplier[3], inp_mat[3]) 
     
     def mixColumns(self, inp):
         comb_mat = [
-            [2, 3, 1, 1],
-            [1, 2, 3, 1],
-            [1, 1, 2, 3],
-            [3, 1, 1, 2]
+            [0x02, 0x03, 0x01, 0x01],
+            [0x01, 0x02, 0x03, 0x01],
+            [0x01, 0x01, 0x02, 0x03],
+            [0x03, 0x01, 0x01, 0x02]
         ]
         out = []
         i = 0
         while i < 4:
             multiplier = comb_mat[i]
             j = 0
+            tmp = []
             while j < 4:
                 inp_mat = [inp[0][j], inp[1][j], inp[2][j], inp[3][j]]
-                out.append(self._multiplyAndXor(multiplier, inp_mat))
+                tmp.append(self._multiplyAndXor(multiplier, inp_mat))
                 j+=1
+            out.append(tmp)
             i+= 1
         return out
     
     def addRoundKeys(self):
         pass
-        
-cipher = AES(key_length, nor)
 
+    class byte:
+        def __init__(self, val):
+            # val is in hex
+            self.val = val
 
-# In[123]:
+        def to_dec(self):
+            return int(self.val, base=16)
+
+        def to_bin(self):
+            return int(self.val, base=2)
+
+    def keyExpansion(self, key):
+        w  = []
+        for i in range(4):
+            w.append(key[4*i], key[4*i+1], key[4*i+2], key[4*i+3])
+
+        for i in range(4, 44):
+            tmp = w[i-1]
+            if i % 4 == 0:
+                pass
+            else:
+                w.append = w[i-4] ^ temp
 
 
 def format_output(msg, data):
@@ -122,6 +138,7 @@ def format_output(msg, data):
         print("\033[1;30;47m{}".format(data))
 
 if __name__ == '__main__':
+    cipher = AES(KEY_LENGTH, NOR)
     pltxt = '0123456789abcdeffedcba9876543210'
     format_output("Plaintext: ", pltxt)
     opt_sbox = cipher.sboxSubstitution(pltxt)
@@ -132,10 +149,7 @@ if __name__ == '__main__':
     shifted = cipher.shiftRows(opt_sbox)
     format_output("After row shifts: ", shifted)
     format_output("Next mixing columns ...", "")
-    eg = [[0x87, 0xF2, 0x4D, 0x97], 
-          [0x6E, 0x4C, 0x90, 0xEC],
-          [0x46, 0xE7, 0x4A, 0xC3],
-          [0xA6, 0x8C, 0xD8, 0x95]
-         ]
-    mixedColumns = cipher.mixColumns(eg)
-    [print(hex(i)) for i in mixedColumns]
+    
+
+
+
