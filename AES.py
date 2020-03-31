@@ -4,6 +4,7 @@
 # In[128]:
 
 KEY = '0f1571c947d9e8591cb7add6af7f6798'
+KEY = '0f1571c947d9e8590cb7add6af7f6798'
 KEY_LENGTH = len('0f1571c947d9e8591cb7add6af7f6798') // 2 # 16 bytes
 
 
@@ -13,14 +14,8 @@ KEY_LENGTH = len('0f1571c947d9e8591cb7add6af7f6798') // 2 # 16 bytes
 # since key length is 16 bytes, number of rounds is 14
 NOR = 10
 class AES:
-    
-    def __init__(self, l, r):
-        self.key_length = l
-        self.nor = r
-        
-    def sboxSubstitution(self, pltxt):
-        # Note: in this implementation, Sbox is a flat list (set) instead of a 2d array
-        Sbox = (
+    # Note: in this implementation, Sbox is a flat list (set) instead of a 2d array
+    sBox = (
             0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
             0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0,
             0xB7, 0xFD, 0x93, 0x26, 0x36, 0x3F, 0xF7, 0xCC, 0x34, 0xA5, 0xE5, 0xF1, 0x71, 0xD8, 0x31, 0x15,
@@ -38,6 +33,14 @@ class AES:
             0xE1, 0xF8, 0x98, 0x11, 0x69, 0xD9, 0x8E, 0x94, 0x9B, 0x1E, 0x87, 0xE9, 0xCE, 0x55, 0x28, 0xDF,
             0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16
             )
+    rCon = ( 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a )
+
+    
+    def __init__(self, l, r):
+        self.keyLength = l
+        self.nor = r
+        
+    def sboxSubstitution(self, pltxt):
         pltxt_indices = [[pltxt[i], pltxt[i+1]] for i in range(0,32,2)]
         l = len(pltxt_indices)
         opt = []
@@ -45,7 +48,7 @@ class AES:
             # since Sbox is a flat list, we will index it using just one index
             # which is row * 16 + column
             sbox_ind = int(pltxt_indices[i][0], 16) * 16 + int(pltxt_indices[i][1], 16)
-            opt.append(hex(Sbox[sbox_ind]))
+            opt.append(hex(AES.sBox[sbox_ind]))
         mat = []
         tmp = []
         for i in range(1, 17):
@@ -104,6 +107,35 @@ class AES:
             out.append(tmp)
             i+= 1
         return out
+
+    @staticmethod
+    def rotWord(word):
+        # print("word: ", word)
+        #word = hex(word)
+        return word[2:] + word[:2]
+
+    @staticmethod
+    def subWord(word):
+        r1 = word[0]
+        c1 = word[1]
+        r2 = word[2]
+        c2 = word[3]
+        r3 = word[4]
+        c3 = word[5]
+        r4 = word[6]
+        c4 = word[7]
+        sbox_ind1 = int(r1, base=16) * 16 + int(c1, base=16)
+        sbox_ind2 = int(r2, base=16) * 16 + int(c2, base=16)
+        sbox_ind3 = int(r3, base=16) * 16 + int(c3, base=16)
+        sbox_ind4 = int(r4, base=16) * 16 + int(c4, base=16)
+        byte1 = hex(AES.sBox[sbox_ind1])
+        byte2 = hex(AES.sBox[sbox_ind2])
+        byte3 = hex(AES.sBox[sbox_ind3])
+        byte4 = hex(AES.sBox[sbox_ind4])
+        resStr = str(byte1+byte2+byte3+byte4)
+        # split by 0x
+        resStr = ''.join(resStr.split("0x"))
+        return resStr
     
     def addRoundKeys(self):
         pass
@@ -119,18 +151,66 @@ class AES:
         def to_bin(self):
             return int(self.val, base=2)
 
-    def keyExpansion(self, key):
+    @staticmethod
+    def stringToHex(s):
+        return int('s', 16)
+
+    @staticmethod
+    def toHexString(h):
+        """
+            h:  can be either 0x4E or 211
+        """
+        if isinstance(h, int):
+            pass
+
+    @staticmethod
+    def chunkWord(strWord):
+        return strWord[:2] + " " + strWord[2:4] + " " + strWord[4:6] + " " + strWord[6:8]
+
+    def keyExpansion(self):
         w  = []
+        l = len(KEY)
         for i in range(4):
-            w.append(key[4*i], key[4*i+1], key[4*i+2], key[4*i+3])
+            strWord = KEY[8*i: 8*i+8]
+            w.append(strWord)
+        
+        for i in range(4, 44, 4):
 
-        for i in range(4, 44):
-            tmp = w[i-1]
-            if i % 4 == 0:
-                pass
-            else:
-                w.append = w[i-4] ^ temp
+            print("i: ", i)
+            # line 1 of output
+            print("w{} = {}\t| ".format(i-4, AES.chunkWord(w[i-4])), end=" ")
+            rot = AES.rotWord(w[i-1])
+            print("RotWord (w{}) = {} = x{}".format(i-1, AES.chunkWord(rot), i // 4))
+            
+            # line 2 of output
+            print("w{} = {}\t| ".format(i-3, AES.chunkWord(w[i-3])), end=" ")
+            subStr = AES.subWord(rot)
+            print("SubWord (x{}) = {} = y{}".format(i-3, AES.chunkWord(subStr), i // 4))
+            
+            # line 3 of output
+            print("w{} = {}\t| ".format(i-2, AES.chunkWord(w[i-2])), end=" ")
+            rcon = AES.rCon[i // 4]
+            print("Rcon ({}) = {} 00 00 00".format(i-3, rcon))
+            # rcon <<= 4 * 6
 
+            # line 4 of output
+            print("w{} = {}\t| ".format(i-1, AES.chunkWord(w[i-1])), end=" ")
+            tmpNum = int(subStr[:2], 16) ^ rcon # tmp is int
+            print("tmpNum: ", tmpNum) # int() requires number or string input
+            tmpStr = str() + subStr[2:]
+            print("y{} xor Rcon ({}) = {}".format(i-3, i-3, AES.chunkWord(str(tmp)[2:])))
+            tmp = tmpNum ^ w[i-1]
+            # convert to string to display
+            # print
+            # convert back to num for computation
+            
+            
+            w.append(str(int(w[i-4], base=16) ^ tmp))
+            w.append(str(int(w[i-3], base=16) ^ int(w[i-1], base=16)))
+            w.append(str(int(w[i-2], base=16) ^ int(w[i], base=16)))
+            w.append(str(int(w[i-1], base=16) ^ int(w[i+1], base=16)))
+
+        return w
 
 def format_output(msg, data):
     print("\033[1;30;0m {}\n\t".format(msg))
@@ -150,6 +230,5 @@ if __name__ == '__main__':
     format_output("After row shifts: ", shifted)
     format_output("Next mixing columns ...", "")
     
-
-
+    cipher.keyExpansion()
 
