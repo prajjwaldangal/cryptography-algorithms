@@ -451,7 +451,7 @@ if __name__ == '__main__':
     w = cipher.keyExpansion()
     inp  = pltxt
     print ("Start of Round\t|  After SubBytes\t|  After ShiftRows\t|  After MixColumns\t|  RoundKey\t\t\t|")
-    for i in range(-1, cipher.nor):
+    for i in range(-1, cipher.nor-1):
         # format_output("Round {}".format(i), "")
         # perform sbox substitution
 

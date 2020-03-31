@@ -1,0 +1,2 @@
+Avalanche effect is a desirable property for cryptographic algorithms such that a small change in the input causes a 
+plethora of change in the output. 
