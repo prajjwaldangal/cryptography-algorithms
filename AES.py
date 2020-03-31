@@ -69,7 +69,14 @@ class AES:
     
     @staticmethod
     def gmul(a, b):
+        """
+            a:      number from the hardcoded AES mix columns matrix
+            b:      number from the input matrix
+
+            returns     the result of multiplying in GF(2^8)
+        """
         p = 0
+        # loop run for 8 times, representing bits in a byte
         for c in range(8):
             if b & 1:
                 p ^= a
@@ -80,14 +87,27 @@ class AES:
             b >>= 1
         return p
     
-    def _multiplyAndXor(self, multiplier, inp_mat):
-        # m = int('0x11B', base=16)
+    @staticmethod
+    def multiplyAndXor(multiplier, inp_mat):
+        """
+            multiplier:     is a 1 x 4 row
+            inp_mat:        is the 4 X 1 column
+
+            returns         a row after mixing (multiplying in GF(2^8) and xoring)
+        """
         return AES.gmul(multiplier[0], inp_mat[0]) ^ \
                 AES.gmul(multiplier[1], inp_mat[1]) ^ \
                 AES.gmul(multiplier[2], inp_mat[2]) ^ \
                 AES.gmul(multiplier[3], inp_mat[3]) 
     
     def mixColumns(self, inp):
+        """
+            inp:    is the 4x4 byte input
+
+            returns   a 4x4 matrix after mixing column
+        """
+        # this function makes use of helper function, multiplyAndXor
+        # the code is straight forward
         comb_mat = [
             [0x02, 0x03, 0x01, 0x01],
             [0x01, 0x02, 0x03, 0x01],
@@ -101,8 +121,9 @@ class AES:
             j = 0
             tmp = []
             while j < 4:
+                # grabbing a column
                 inp_mat = [inp[0][j], inp[1][j], inp[2][j], inp[3][j]]
-                tmp.append(self._multiplyAndXor(multiplier, inp_mat))
+                tmp.append(AES.multiplyAndXor(multiplier, inp_mat))
                 j+=1
             out.append(tmp)
             i+= 1
@@ -156,12 +177,13 @@ class AES:
         return int('s', 16)
 
     @staticmethod
-    def toHexString(h):
-        """
-            h:  can be either 0x4E or 211
-        """
-        if isinstance(h, int):
-            pass
+    def numToHexString(n):
+
+        if not isinstance(n, int):
+            n = int(n, 16)
+
+        h = hex(n)
+        return h[2:]
 
     @staticmethod
     def chunkWord(strWord):
@@ -195,17 +217,15 @@ class AES:
 
             # line 4 of output
             print("w{} = {}\t| ".format(i-1, AES.chunkWord(w[i-1])), end=" ")
-            tmpNum = int(subStr[:2], 16) ^ rcon # tmp is int
-            print("tmpNum: ", tmpNum) # int() requires number or string input
-            tmpStr = str() + subStr[2:]
-            print("y{} xor Rcon ({}) = {}".format(i-3, i-3, AES.chunkWord(str(tmp)[2:])))
-            tmp = tmpNum ^ w[i-1]
+            tmp = int(subStr[:2], 16)  ^ rcon
+            tmp = AES.numToHexString(tmp)
+            print("y{} xor Rcon ({}) = {}".format(i-3, i-3, AES.chunkWord(tmp)))
             # convert to string to display
             # print
             # convert back to num for computation
             
-            
-            w.append(str(int(w[i-4], base=16) ^ tmp))
+            # print("tmp before first appending: ", type(tmp))
+            w.append(str(int(w[i-4], base=16) ^ int(tmp, 16)))
             w.append(str(int(w[i-3], base=16) ^ int(w[i-1], base=16)))
             w.append(str(int(w[i-2], base=16) ^ int(w[i], base=16)))
             w.append(str(int(w[i-1], base=16) ^ int(w[i+1], base=16)))
@@ -229,6 +249,6 @@ if __name__ == '__main__':
     shifted = cipher.shiftRows(opt_sbox)
     format_output("After row shifts: ", shifted)
     format_output("Next mixing columns ...", "")
-    
+    # mc = cipher.mixColumns(shifted)
     cipher.keyExpansion()
 
