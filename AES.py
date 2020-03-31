@@ -4,8 +4,8 @@
 # In[128]:
 
 KEY = '0f1571c947d9e8591cb7add6af7f6798'
-KEY = '0f1571c947d9e8590cb7add6af7f6798'
-KEY_LENGTH = len('0f1571c947d9e8591cb7add6af7f6798') // 2 # 16 bytes
+# KEY = '0f1571c947d9e8590cb7add6af7f6798'
+KEY_LENGTH = len(KEY) // 2 # 16 bytes
 
 
 # In[132]:
@@ -150,13 +150,22 @@ class AES:
         sbox_ind3 = int(r3, base=16) * 16 + int(c3, base=16)
         sbox_ind4 = int(r4, base=16) * 16 + int(c4, base=16)
         byte1 = hex(AES.sBox[sbox_ind1])
+        byte1 = str(byte1).split("0x")[1]
+        if len(byte1) <2:
+            byte1 = '0' + byte1
         byte2 = hex(AES.sBox[sbox_ind2])
+        byte2 = str(byte2).split("0x")[1]
+        if len(byte2) <2:
+            byte2 = '0' + byte2
         byte3 = hex(AES.sBox[sbox_ind3])
+        byte3 = str(byte3).split("0x")[1]
+        if len(byte3) <2:
+            byte3 = '0' + byte3
         byte4 = hex(AES.sBox[sbox_ind4])
-        resStr = str(byte1+byte2+byte3+byte4)
-        # split by 0x
-        resStr = ''.join(resStr.split("0x"))
-        return resStr
+        byte4 = str(byte4).split("0x")[1]
+        if len(byte4) <2:
+            byte4 = '0' + byte4
+        return byte1+byte2+byte3+byte4
     
     def addRoundKeys(self):
         pass
@@ -174,7 +183,7 @@ class AES:
     def chunkWord(strWord):
         return strWord[:2] + " " + strWord[2:4] + " " + strWord[4:6] + " " + strWord[6:8]
 
-    @property
+    # @property
     def keyExpansion(self):
 
         def getX(word):
@@ -204,26 +213,32 @@ class AES:
             print("w{} = {}\t\t\t\t\t| y{} xor Rcon ({}) = {}".format(3, AES.chunkWord(ws[3]),
                 1, 1, AES.chunkWord(zs[0]), end=" "))
 
-
-            for i in range(4, 44):
+            for i in range(4, 40):
 
                 if i % 4 == 0:
                     print("-------------------------------------------------------------------------------")
                     wFirstInCycle = int(zs[i//4 - 1], 16) ^ int(w[i-4], 16)
-                    # print("wFirstInCycle: ", wFirstInCycle)
-                    print("w{} = w{} xor z{} = {}\t\t\t\t\t| RotWord (w{}) = {} = x{}".format(i, i-4, i//4,
-                                                          AES.chunkWord(AES.numToHexString(wFirstInCycle)),
-                                                                i+3, xs[i//4-1], i//4+1))
+                    print("w{} = w{} xor z{} = {}\t\t|".format(i, i-4, i//4,
+                                                          AES.chunkWord(AES.numToHexString(wFirstInCycle))), end=" ")
+                    # column 2
+                    print("RotWord (w{}) = {} = x{}".format(i+3, AES.chunkWord(xs[i//4]), i//4+1))
                 elif i % 4 == 1:
-                    print("w{} = w{} xor w{} = {}\t\t\t\t\t| SubWord (x{}) = {} = y{}".format(i, i-4, i-1, AES.chunkWord(ws[i+1]),
-                                                i//4, AES.chunkWord(ys[i//4-1]), i//4, end=" "))
+                    print("w{} = w{} xor w{} = {}\t\t|".format(i, i-1, i-4, AES.chunkWord(ws[i])), end=" ")
+                    # column 2
+                    print("SubWord (x{}) = {} = y{}".format(i//4+1, AES.chunkWord(ys[i//4]), i//4+1))
                 elif i % 4 == 2:
-                    print("w{} = w{} xor w{} = {}\t\t\t\t\t| Rcon ({}) = {}".format(i, i-4, i-1, AES.chunkWord(ws[i+2]),
-                            math.ceil(i/4), AES.rCon[math.ceil(i / 4)], end=" "))
+                    print("w{} = w{} xor w{} = {}\t\t|".format(i, i-4, i-4, AES.chunkWord(ws[i])), end=" ")
+                    # column 2
+                    print("Rcon ({}) = {} 00 00 00".format(math.ceil(i/4), hex(AES.rCon[math.ceil(i / 4)]).split("0x")[1], end=" "))
                 else:
-                    print("w{} = w{} xor w{} = {}\t\t\t\t\t| y{} xor Rcon ({}) = {}".format(i, i-4, i-1, AES.chunkWord(ws[3]),
-                            1, 1, AES.chunkWord(zs[0]), end=" "))
-
+                    print("w{} = w{} xor w{} = {}\t\t|".format(i, i-1, i-4, AES.chunkWord(ws[i])), end=" ")
+                    # column 2
+                    print("y{} xor Rcon ({}) = {}".format(i//4+1, i//4+1, AES.chunkWord(zs[i//4])))
+            print("-------------------------------------------------------------------------------")
+            print("w{} = w{} xor z{} = {}".format(40, 36, 10, AES.chunkWord(ws[40])))
+            print("w{} = w{} xor z{} = {}".format(41, 40, 37, AES.chunkWord(ws[41])))
+            print("w{} = w{} xor z{} = {}".format(42, 41, 38, AES.chunkWord(ws[42])))
+            print("w{} = w{} xor z{} = {}".format(43, 42, 39, AES.chunkWord(ws[43])))
         w = ['' for i in range(44)]
         l = len(KEY)
         for i in range(4):
@@ -258,7 +273,7 @@ def format_output(msg, data):
 if __name__ == '__main__':
     cipher = AES(KEY_LENGTH, NOR)
     pltxt = '0123456789abcdeffedcba9876543210'
-    format_output("Plaintext: ", pltxt)
+    format_output("Plaintext: ", ' '.join(pltxt))
     opt_sbox = cipher.sboxSubstitution(pltxt)
     format_output("Applying sbox operation on plaintext and returning a " +
         "matrix for row shifting ...", "")
@@ -268,6 +283,6 @@ if __name__ == '__main__':
     format_output("After row shifts: ", shifted)
     format_output("Next mixing columns ...", "")
     # mc = cipher.mixColumns(shifted)
-    print("Expanding key")
-    cipher.keyExpansion
+    print("Expanding key: ", ' '.join(KEY))
+    cipher.keyExpansion()
 
