@@ -161,21 +161,6 @@ class AES:
     def addRoundKeys(self):
         pass
 
-    class byte:
-        def __init__(self, val):
-            # val is in hex
-            self.val = val
-
-        def to_dec(self):
-            return int(self.val, base=16)
-
-        def to_bin(self):
-            return int(self.val, base=2)
-
-    @staticmethod
-    def stringToHex(s):
-        return int('s', 16)
-
     @staticmethod
     def numToHexString(n):
 
@@ -189,47 +174,80 @@ class AES:
     def chunkWord(strWord):
         return strWord[:2] + " " + strWord[2:4] + " " + strWord[4:6] + " " + strWord[6:8]
 
+    @property
     def keyExpansion(self):
-        w  = []
+
+        def getX(word):
+            return AES.rotWord(word)
+
+        def getY(rotated):
+            return AES.subWord(rotated)
+
+        def getZ(subStr, i):
+            rcon = AES.rCon[i // 4]
+            tmp = int(subStr[:2], 16)  ^ rcon
+            tmp = AES.numToHexString(tmp)
+            # convert first part of tmp to hex (R(9) = 27 = 1B)
+            tmp = tmp + subStr[2:]
+            s = tmp
+            return s
+
+
+        def printTable(ws, xs, ys, zs):
+            import math
+            print("w{} = {}\t\t\t\t\t| RotWord (w{}) = {} = x{}".format(0, AES.chunkWord(ws[0]),
+                3,  AES.chunkWord(xs[0]), 1, end=" "))
+            print("w{} = {}\t\t\t\t\t| SubWord (x{}) = {} = y{}".format(1, AES.chunkWord(ws[1]),
+                1, AES.chunkWord(ys[0]), 1, end=" "))
+            print("w{} = {}\t\t\t\t\t| Rcon ({}) = {} 00 00 00".format(2, AES.chunkWord(ws[2]),
+                1, AES.rCon[1], end=" "))
+            print("w{} = {}\t\t\t\t\t| y{} xor Rcon ({}) = {}".format(3, AES.chunkWord(ws[3]),
+                1, 1, AES.chunkWord(zs[0]), end=" "))
+
+
+            for i in range(4, 44):
+
+                if i % 4 == 0:
+                    print("-------------------------------------------------------------------------------")
+                    wFirstInCycle = int(zs[i//4 - 1], 16) ^ int(w[i-4], 16)
+                    # print("wFirstInCycle: ", wFirstInCycle)
+                    print("w{} = w{} xor z{} = {}\t\t\t\t\t| RotWord (w{}) = {} = x{}".format(i, i-4, i//4,
+                                                          AES.chunkWord(AES.numToHexString(wFirstInCycle)),
+                                                                i+3, xs[i//4-1], i//4+1))
+                elif i % 4 == 1:
+                    print("w{} = w{} xor w{} = {}\t\t\t\t\t| SubWord (x{}) = {} = y{}".format(i, i-4, i-1, AES.chunkWord(ws[i+1]),
+                                                i//4, AES.chunkWord(ys[i//4-1]), i//4, end=" "))
+                elif i % 4 == 2:
+                    print("w{} = w{} xor w{} = {}\t\t\t\t\t| Rcon ({}) = {}".format(i, i-4, i-1, AES.chunkWord(ws[i+2]),
+                            math.ceil(i/4), AES.rCon[math.ceil(i / 4)], end=" "))
+                else:
+                    print("w{} = w{} xor w{} = {}\t\t\t\t\t| y{} xor Rcon ({}) = {}".format(i, i-4, i-1, AES.chunkWord(ws[3]),
+                            1, 1, AES.chunkWord(zs[0]), end=" "))
+
+        w = ['' for i in range(44)]
         l = len(KEY)
         for i in range(4):
             strWord = KEY[8*i: 8*i+8]
-            w.append(strWord)
+            w[i] = strWord
         
-        for i in range(4, 44, 4):
+        xs = []
+        ys = []
+        zs = []
+        # rcons = []
 
-            print("i: ", i)
-            # line 1 of output
-            print("w{} = {}\t| ".format(i-4, AES.chunkWord(w[i-4])), end=" ")
-            rot = AES.rotWord(w[i-1])
-            print("RotWord (w{}) = {} = x{}".format(i-1, AES.chunkWord(rot), i // 4))
-            
-            # line 2 of output
-            print("w{} = {}\t| ".format(i-3, AES.chunkWord(w[i-3])), end=" ")
-            subStr = AES.subWord(rot)
-            print("SubWord (x{}) = {} = y{}".format(i-3, AES.chunkWord(subStr), i // 4))
-            
-            # line 3 of output
-            print("w{} = {}\t| ".format(i-2, AES.chunkWord(w[i-2])), end=" ")
-            rcon = AES.rCon[i // 4]
-            print("Rcon ({}) = {} 00 00 00".format(i-3, rcon))
-            # rcon <<= 4 * 6
-
-            # line 4 of output
-            print("w{} = {}\t| ".format(i-1, AES.chunkWord(w[i-1])), end=" ")
-            tmp = int(subStr[:2], 16)  ^ rcon
-            tmp = AES.numToHexString(tmp)
-            print("y{} xor Rcon ({}) = {}".format(i-3, i-3, AES.chunkWord(tmp)))
-            # convert to string to display
-            # print
-            # convert back to num for computation
-            
-            # print("tmp before first appending: ", type(tmp))
-            w.append(str(int(w[i-4], base=16) ^ int(tmp, 16)))
-            w.append(str(int(w[i-3], base=16) ^ int(w[i-1], base=16)))
-            w.append(str(int(w[i-2], base=16) ^ int(w[i], base=16)))
-            w.append(str(int(w[i-1], base=16) ^ int(w[i+1], base=16)))
-
+        for i in range(4, 44):
+            # print("i: ", i)
+            temp = w[i-1]
+            if i % 4 == 0:
+                x = getX(w[i-1])
+                xs.append(x)
+                y  = getY(xs[i//4-1])
+                ys.append(y)
+                z = getZ(y, i)
+                zs.append(z)
+                temp = z
+            w[i] = AES.numToHexString(hex(int(w[i-4], 16) ^ int(temp, 16)))
+        printTable(w, xs, ys, zs)
         return w
 
 def format_output(msg, data):
@@ -242,7 +260,7 @@ if __name__ == '__main__':
     pltxt = '0123456789abcdeffedcba9876543210'
     format_output("Plaintext: ", pltxt)
     opt_sbox = cipher.sboxSubstitution(pltxt)
-    format_output("Applying sbox operation on plaintext and returning a" +
+    format_output("Applying sbox operation on plaintext and returning a " +
         "matrix for row shifting ...", "")
     format_output("After sbox operation: ", opt_sbox)
     format_output("Next shifting rows ...", "")
@@ -250,5 +268,6 @@ if __name__ == '__main__':
     format_output("After row shifts: ", shifted)
     format_output("Next mixing columns ...", "")
     # mc = cipher.mixColumns(shifted)
-    cipher.keyExpansion()
+    print("Expanding key")
+    cipher.keyExpansion
 
